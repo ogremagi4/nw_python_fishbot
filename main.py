@@ -20,12 +20,12 @@ if __name__ == '__main__':
     detector.start()
     fisher.start()
 
-while(True):
 
+while(True):
     # if we don't have a screenshot yet, don't run the code below this point yet
     if wincap.screenshot is None:
         continue
-
     # give detector the current screenshot to search for objects in
     detector.update(wincap.screenshot)
+    #pass state to fisher so it makes decisions
     fisher.update(detector.state)
