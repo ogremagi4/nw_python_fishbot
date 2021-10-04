@@ -1,7 +1,17 @@
 import numpy as np
 import win32gui, win32ui, win32con
 from threading import Thread, Lock
+import time
 
+def timing(f):
+    def wrap(*args, **kwargs):
+        time1 = time.time()
+        ret = f(*args, **kwargs)
+        time2 = time.time()
+        print('{:s} function took {:.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+
+        return ret
+    return wrap
 
 class WindowCapture:
 
@@ -111,6 +121,7 @@ class WindowCapture:
     def run(self):
         # TODO: you can write your own time/iterations calculation to determine how fast this is
         while not self.stopped:
+            
             # get an updated image of the game
             screenshot = self.get_screenshot()
             # lock the thread while updating the results

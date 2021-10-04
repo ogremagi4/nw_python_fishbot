@@ -18,7 +18,6 @@ class Detection:
     lock = None
     rectangles = []
     # properties
-    cascade = None
     screenshot = None
 
     def __init__(self):
@@ -80,41 +79,24 @@ class Detection:
         self.stopped = True
 
     def run(self):
-        # TODO: you can write your own time/iterations calculation to determine how fast this is
         while not self.stopped:
             if not self.screenshot is None:
-                # do object detection
-                #either find nothing, a bobber, a hook indicator, a fishing indicator
                 image_found=False
+                states_to_check =  [
+                        FishingState.BOBBER_IS_STILL,
+                        FishingState.ROD_IN_HANDS
+                ]
+                if self.state == FishingState.ROD_IN_HANDS:
+                    states_to_check = [FishingState.BOBBER_IS_STILL]
+                if self.state == FishingState.BOBBER_IS_STILL:
+                    states_to_check = [FishingState.GET_READY_TO_HOOK, FishingState.SHOULD_BE_HOOKING]
+                if self.state in [FishingState.GET_READY_TO_HOOK, FishingState.SHOULD_BE_HOOKING]:
+                    states_to_check =[FishingState.SHOULD_BE_REELING]
+                if self.state in [FishingState.SHOULD_BE_REELING, FishingState.SHOULD_NOT_BE_REELING, FishingState.STOP_REELING]:
+                    states_to_check =[FishingState.SHOULD_NOT_BE_REELING, FishingState.STOP_REELING, FishingState.SHOULD_BE_REELING, FishingState.ROD_IN_HANDS, FishingState.BOBBER_IS_STILL]
+                    
+                
 
-                if self.states_queue.full():     
-                    last_states = [self.states_queue.get() for _ in range(self.states_queue.qsize())]
-                    if len(set(last_states)) == 1:
-                        states_to_check = [
-                            state for state in FishingState if not state == FishingState.ROD_NOT_IN_HANDS
-                        ]
-                else:
-                    states_to_check = []
-                    if self.state == FishingState.BOBBER_IS_STILL:
-                        states_to_check = [
-                            FishingState.SHOULD_BE_HOOKING, 
-                            FishingState.GET_READY_TO_HOOK, 
-                            FishingState.ROD_IN_HANDS]
-                    elif self.state == FishingState.GET_READY_TO_HOOK:
-                        states_to_check = [FishingState.SHOULD_BE_HOOKING, FishingState.SHOULD_BE_REELING, FishingState.ROD_IN_HANDS]
-                    elif self.state in [FishingState.SHOULD_BE_HOOKING]:
-                        states_to_check = [FishingState.SHOULD_BE_REELING]
-                    elif self.state in [FishingState.SHOULD_BE_REELING, FishingState.STOP_REELING, FishingState.SHOULD_NOT_BE_REELING]:
-                        states_to_check = [
-                            FishingState.STOP_REELING,
-                            FishingState.SHOULD_NOT_BE_REELING,
-                            FishingState.SHOULD_BE_REELING
-                        ]
-                    else:
-                        states_to_check = [
-                            FishingState.BOBBER_IS_STILL,
-                            FishingState.ROD_IN_HANDS
-                        ]
 
                 for state in states_to_check:
                     rectangles = self.find(self.screenshot, self.states_map[state])
@@ -123,8 +105,9 @@ class Detection:
                         self.state, self.rectangles = state, rectangles
                         break
 
-                self.states_queue.put(self.state)
 
-                print(f'{self.state}')
+                print(f'Image found: {image_found}, {self.state}')
+                self.lock.acquire()
                 self.rectangles = rectangles
+                self.lock.release()
             # lock the thread while updating the results

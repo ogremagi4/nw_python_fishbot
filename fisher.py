@@ -49,7 +49,7 @@ class Fisher(Thread):
         self.leftClick(
             delay = round(random.uniform(2,4),2)
         )
-        time.sleep(4)
+        time.sleep(8)#sleep a bit so opencv will find bobber in the water and make sure we dont throw the rod again
     
     def reel(self):
         print('Reeling')
